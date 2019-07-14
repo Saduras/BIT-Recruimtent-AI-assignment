@@ -61,17 +61,20 @@ def main():
     preds = processor.postprocess(preds)
     actuals = processor.postprocess(test_y)
 
-    mean_squared_error(preds, actuals)
-
-    preds = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
-    preds = processor.postprocess(preds)
-
+    fig1 = plt.figure()
     plt.plot(actuals, label='truth')
     plt.plot(preds, label='prediction')
     plt.legend()
+    plt.savefig('./plot_static.png')
 
-    figpath='./plot.png'
-    plt.savefig(figpath)
+    preds_moving = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
+    preds_moving = processor.postprocess(preds_moving)
+
+    fig2 = plt.figure()
+    plt.plot(actuals, label='truth')
+    plt.plot(preds_moving, label='prediction')
+    plt.legend()
+    plt.savefig('./plot_moving.png')
 
 if __name__ == "__main__":
     main()
