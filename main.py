@@ -18,8 +18,8 @@ def plot_test_datapoint(test_x, test_y, pred, forcast):
     plt.plot(test_x, label='input')
     off = len(test_x)
     xs = list(range(off, off + forcast))
-    plt.plot(xs, pred, label='prediction')
     plt.plot(xs, test_y, label='label')
+    plt.plot(xs, pred, label='prediction')
 
     plt.legend()
     plt.savefig('./plot_single.png')
@@ -80,7 +80,7 @@ def main():
     args = parser.parse_args()
 
     df = pd.read_csv(args.dataset)
-    df = df.iloc[::24,:]
+    # df = df.iloc[::24,:]
 
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
