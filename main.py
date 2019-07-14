@@ -8,31 +8,36 @@ from sklearn.metrics import mean_squared_error
 from model import LSTMModel
 from data_processor import DataProcessor
 
-def plot_data(x, y, label=''):
+def plot_time_data(x, y, label=''):
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter('%d/%m/%Y'))
     plt.gca().xaxis.set_major_locator(dates.MonthLocator(interval=3))
     plt.plot(x,y,label=label)
     plt.gcf().autofmt_xdate()
 
-def eval_plot_test_datapoint(model, test_x, test_y):
-    preds = model.predict(test_x.reshape(1,-1, 1))
-    preds = processor.postprocess(preds)
-
+def plot_test_datapoint(test_x, test_y, pred, forcast):
     plt.plot(test_x, label='input')
     off = len(test_x)
-    xs = list(range(off, off + args.forcast))
-    plt.plot(xs, preds[0], label='prediction')
+    xs = list(range(off, off + forcast))
+    plt.plot(xs, pred, label='prediction')
     plt.plot(xs, test_y, label='label')
 
     plt.legend()
     plt.savefig('./plot_single.png')
 
-def plot_moving_window(dataset, preds_moving):
+def plot_moving_window(timestamps, dataset, preds_moving):
+    timestamps = dates.datestr2num(timestamps)
     fig2 = plt.figure()
-    plt.plot(dataset, label='full dataset')
-    off = len(dataset)
-    xs = list(range(off, off + len(preds_moving)))
-    plt.plot(xs, preds_moving, label='prediction')
+    plot_time_data(timestamps[:len(dataset)], dataset, label='full dataset')
+
+    x = float(timestamps[len(dataset)])
+    step_size = float(timestamps[-1] - timestamps[-2])
+    end = float(x + len(preds_moving) * step_size)
+    xs = []
+    while x < end:
+        xs.append(x)
+        x += step_size
+
+    plot_time_data(xs, preds_moving, label='prediction')
     plt.legend()
     plt.savefig('./plot_moving.png')
 
@@ -69,7 +74,7 @@ def main():
     args = parser.parse_args()
 
     df = pd.read_csv(args.dataset)
-    # df = df.iloc[::24,:]
+    df = df.iloc[::24,:]
 
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
@@ -87,8 +92,9 @@ def main():
         lstm.load(args.model_path)
 
     # evaluation and plots
-    print(test_X[-1].shape, test_y[-1].shape)
-    eval_plot_test_datapoint(lstm, test_X[-1], test_y[-1])
+    preds = lstm.predict(test_X[-1].reshape(1,-1, 1))
+    preds = processor.postprocess(preds)
+    plot_test_datapoint(test_X[-1], test_y[-1], preds[0], args.forcast)
 
     preds_moving = moving_test_window_preds(lstm, test_X[0,:], 
                                             n_future_preds=500,
@@ -96,7 +102,7 @@ def main():
     preds_moving = np.array(preds_moving).reshape(-1,1)
     preds_moving = processor.postprocess(preds_moving)
 
-    plot_moving_window(raw_series, preds_moving)
+    plot_moving_window(df['datetime'], raw_series, preds_moving)
 
 if __name__ == "__main__":
     main()
