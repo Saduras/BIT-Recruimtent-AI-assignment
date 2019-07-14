@@ -3,7 +3,7 @@ import time
 from keras import Sequential
 from keras.layers import LSTM, Dropout, Dense, Activation
 
-class LSTM_model:
+class LSTMModel:
     def __init__(self, window_size):
         self.model = Sequential()
         self.model.add(LSTM(input_shape=(window_size,1), output_dim=window_size, return_sequences=True))
