@@ -32,8 +32,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d','--dataset', type=str, default='./data/timeseries_1h.csv',
                         help='Path to csv dataset to use')
+    parser.add_argument('-m','--model-path', type=str, default='./model.h5',
+                        help='Path for saving/loading trained model')
     parser.add_argument('-w','--window-size', type=int, default=50,
-                        help='Length of input sequence to predict next datapoint')                        
+                        help='Length of input sequence to predict next datapoint')
+    parser.add_argument('--eval-only', action='store_true',
+                        help='If set model will be loaded from path instead of trained')
+
     args = parser.parse_args()
 
     df = pd.read_csv(args.dataset)
@@ -45,8 +50,11 @@ def main():
 
     lstm = LSTMModel(args.window_size)
     print(lstm.model.summary())
-
-    lstm.fit(train_X, train_y)
+    if not args.eval_only:
+        lstm.fit(train_X, train_y)
+        lstm.save(args.model_path)
+    else:
+        lstm.load(args.model_path)
 
     preds = lstm.predict(test_X)
 

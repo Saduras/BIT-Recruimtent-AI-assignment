@@ -2,8 +2,9 @@ import time
 
 from keras import Sequential
 from keras.layers import LSTM, Dropout, Dense, Activation
+from keras.models import load_model, save_model
 
-class LSTMModel:
+class LSTMModel():
     def __init__(self, window_size):
         self.model = Sequential()
         self.model.add(LSTM(input_shape=(window_size,1), output_dim=window_size, return_sequences=True))
@@ -22,3 +23,11 @@ class LSTMModel:
 
     def predict(self, input):
         return self.model.predict(input)
+
+    def load(self, path):
+        self.model = load_model(path)
+        print(f'loaded model from {path}')
+
+    def save(self, path):
+        save_model(self.model, path)
+        print(f'saved model at {path}')
