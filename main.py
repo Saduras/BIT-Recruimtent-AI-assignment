@@ -27,8 +27,14 @@ def plot_test_datapoint(test_x, test_y, pred, forcast):
 def plot_moving_window(timestamps, dataset, preds_moving):
     timestamps = dates.datestr2num(timestamps)
     fig2 = plt.figure()
+
+    # revert diff calculation
+    dataset = np.array(dataset).cumsum()
+    preds_moving = dataset[-1] + preds_moving.cumsum()
+
     plot_time_data(timestamps[:len(dataset)], dataset, label='full dataset')
 
+    # x-axis for future predicution
     x = float(timestamps[len(dataset)])
     step_size = float(timestamps[-1] - timestamps[-2])
     end = float(x + len(preds_moving) * step_size)
