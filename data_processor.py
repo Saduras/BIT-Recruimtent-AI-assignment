@@ -30,7 +30,7 @@ class DataProcessor:
         train_X = train.iloc[:,:-1].values
         train_y = train.iloc[:,-1].values
         test_X = test.iloc[:,:-1].values
-        test_y = test.iloc[:,-1].values.reshape(-1, 1)
+        test_y = test.iloc[:,-1].values
 
         train_X = train_X.reshape(train_X.shape[0],train_X.shape[1],1)
         test_X = test_X.reshape(test_X.shape[0],test_X.shape[1],1)
@@ -38,4 +38,5 @@ class DataProcessor:
         return train_X, train_y, test_X, test_y
 
     def postprocess(self, y):
+        y = np.array(y).reshape(-1, 1)
         return self.scaler.inverse_transform(y)

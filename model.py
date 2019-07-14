@@ -17,7 +17,7 @@ class LSTMModel:
 
     def fit(self, train_X, train_y):
         start = time.time()
-        self.model.fit(train_X,train_y, batch_size=512, nb_epoch=3, validation_split=0.1)
+        self.model.fit(train_X,train_y, batch_size=512, epochs=3, validation_split=0.1)
         print(f'Training Time : {time.time() - start:0.2f}s')
 
     def predict(self, input):

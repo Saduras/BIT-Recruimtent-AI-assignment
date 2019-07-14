@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
@@ -12,6 +13,20 @@ def plot_data(x, y, label=''):
     plt.gca().xaxis.set_major_locator(dates.MonthLocator(interval=3))
     plt.plot(x,y,label=label)
     plt.gcf().autofmt_xdate()
+
+def moving_test_window_preds(model, start_X, n_future_preds):
+    preds_moving = []
+    moving_test_window = start_X.reshape(1, start_X.shape[0], start_X.shape[1])
+
+    for i in range(n_future_preds):
+        preds_on_step = model.predict(moving_test_window)
+
+        preds_moving.append(preds_on_step[0,0])
+        preds_on_step = preds_on_step.reshape(1,1,1)
+
+        moving_test_window = np.concatenate((moving_test_window[:,1:,:], \
+                                            preds_on_step), axis=1)
+    return preds_moving
 
 def main():
     parser = argparse.ArgumentParser()
@@ -39,6 +54,9 @@ def main():
     actuals = processor.postprocess(test_y)
 
     mean_squared_error(preds, actuals)
+
+    preds = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
+    preds = processor.postprocess(preds)
 
     plt.plot(actuals, label='truth')
     plt.plot(preds, label='prediction')
