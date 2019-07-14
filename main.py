@@ -4,6 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 
+import pandas as pd
+
+from fbprophet import Prophet
+
 def load_data(path):
     data = []
     with open(path, 'r') as file:
@@ -29,12 +33,21 @@ def main():
                         help='Path to csv dataset to use')
     args = parser.parse_args()
 
-    data = load_data(args.dataset)
+    df = pd.read_csv(args.dataset)
+    df.columns = ['ds', 'y']
 
-    x = dates.datestr2num(data[:,0])
-    y = data[:,1].astype(np.float)
+    print(df.head())
 
-    plot_data(x,y)
+    model = Prophet(changepoint_prior_scale=0.01)
+    model.fit(df)
+
+    future = model.make_future_dataframe(periods=180 * 24, freq='H')
+    forecast = model.predict(future)
+
+    fig1 = model.plot(forecast)
+
+    figpath='./plot.png'
+    plt.savefig(figpath)
 
 if __name__ == "__main__":
     main()
