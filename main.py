@@ -14,18 +14,40 @@ def plot_data(x, y, label=''):
     plt.plot(x,y,label=label)
     plt.gcf().autofmt_xdate()
 
-def moving_test_window_preds(model, start_X, n_future_preds):
+def eval_plot_test_datapoint(model, test_x, test_y):
+    preds = model.predict(test_x.reshape(1,-1, 1))
+    preds = processor.postprocess(preds)
+
+    plt.plot(test_x, label='input')
+    off = len(test_x)
+    xs = list(range(off, off + args.forcast))
+    plt.plot(xs, preds[0], label='prediction')
+    plt.plot(xs, test_y, label='label')
+
+    plt.legend()
+    plt.savefig('./plot_single.png')
+
+def plot_moving_window(dataset, preds_moving):
+    fig2 = plt.figure()
+    plt.plot(dataset, label='full dataset')
+    off = len(dataset)
+    xs = list(range(off, off + len(preds_moving)))
+    plt.plot(xs, preds_moving, label='prediction')
+    plt.legend()
+    plt.savefig('./plot_moving.png')
+
+def moving_test_window_preds(model, start_X, n_future_preds, step):
     preds_moving = []
     moving_test_window = start_X.reshape(1, start_X.shape[0], start_X.shape[1])
 
-    for i in range(n_future_preds):
-        preds_on_step = model.predict(moving_test_window)
+    for i in range(0,n_future_preds, step):
+        preds = model.predict(moving_test_window)
 
-        preds_moving.append(preds_on_step[0,0])
-        preds_on_step = preds_on_step.reshape(1,1,1)
+        preds_moving.extend(preds[0])
+        preds = preds.reshape(1,-1,1)
 
-        moving_test_window = np.concatenate((moving_test_window[:,1:,:], \
-                                            preds_on_step), axis=1)
+        moving_test_window = np.concatenate((moving_test_window[:,preds.shape[1]:,:], \
+                                            preds), axis=1)
     return preds_moving
 
 def main():
@@ -38,23 +60,23 @@ def main():
                         help='Length of input sequence to predict next datapoint')
     parser.add_argument('-f','--forcast', type=int, default=5,
                         help='Length of predicted sequence')
+    parser.add_argument('--shift', type=int, default=1,
+                        help='By how many steps a training/test sequence is shifted to its previous')
     parser.add_argument('--epochs', type=int, default=10,
                         help='Number of epochs for training')
     parser.add_argument('--eval-only', action='store_true',
                         help='If set model will be loaded from path instead of trained')
     args = parser.parse_args()
 
-    shift = 5
-
     df = pd.read_csv(args.dataset)
-    df = df.iloc[::24*2,:]
+    # df = df.iloc[::24,:]
 
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
     processor = DataProcessor(window_size=args.window_size, 
                             forcast_size=args.forcast,
-                            shift=shift)
-    train_X, train_y, test_X, test_y = processor.preprocess(df)
+                            shift=args.shift)
+    train_X, train_y, test_X, test_y, raw_series = processor.preprocess(df)
 
     lstm = LSTMModel(args.window_size, args.forcast)
     print(lstm.model.summary())
@@ -64,39 +86,17 @@ def main():
     else:
         lstm.load(args.model_path)
 
-    preds = lstm.predict(test_X)
+    # evaluation and plots
+    print(test_X[-1].shape, test_y[-1].shape)
+    eval_plot_test_datapoint(lstm, test_X[-1], test_y[-1])
 
-    preds = processor.postprocess(preds)
-    actuals_train = processor.postprocess(train_y[:,1].reshape(-1,1))
-    actuals_test = processor.postprocess(test_y[:,1].reshape(-1,1))
-    print(actuals_train.shape, actuals_test.shape)
-    actuals = np.concatenate((actuals_train, actuals_test))
+    preds_moving = moving_test_window_preds(lstm, test_X[0,:], 
+                                            n_future_preds=500,
+                                            step=args.forcast)
+    preds_moving = np.array(preds_moving).reshape(-1,1)
+    preds_moving = processor.postprocess(preds_moving)
 
-    fig1 = plt.figure()
-    plt.plot(actuals, label='truth')
-    xs = []
-    for i in range(5):
-        off_s = len(train_X) + i * shift
-        # off_s = i * shift
-        off_e = off_s + args.forcast
-        xs.append([x for x in range(off_s, off_e)])
-    # print(xs, preds[0])
-    plt.plot(xs[0], preds[0], label='prediction')
-    plt.plot(xs[4], preds[4], label='prediction')
-
-    # print(preds.shape, xs.shape)
-
-    plt.legend()
-    plt.savefig('./plot_static.png')
-
-    # preds_moving = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
-    # preds_moving = processor.postprocess(preds_moving)
-
-    # fig2 = plt.figure()
-    # plt.plot(actuals, label='truth')
-    # plt.plot(preds_moving, label='prediction')
-    # plt.legend()
-    # plt.savefig('./plot_moving.png')
+    plot_moving_window(raw_series, preds_moving)
 
 if __name__ == "__main__":
     main()
