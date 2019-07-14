@@ -14,9 +14,12 @@ class DataProcessor:
         x = np.array(df['value']).reshape(-1,1)
 
         # translate to differences?
+        diffs = []
+        for i in range(1, len(x)):
+            diffs.append(x[i] - x[i-1])
 
         # normalize values
-        scaled = self.scaler.fit_transform(x)
+        scaled = self.scaler.fit_transform(diffs)
         series = pd.DataFrame(scaled)
 
         # create windows
@@ -39,7 +42,7 @@ class DataProcessor:
         train_X = train_X.reshape(train_X.shape[0],train_X.shape[1],1)
         test_X = test_X.reshape(test_X.shape[0],test_X.shape[1],1)
 
-        return train_X, train_y, test_X, test_y
+        return train_X, train_y, test_X, test_y, diffs
 
     def postprocess(self, y):
         return self.scaler.inverse_transform(y)
