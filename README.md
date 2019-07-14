@@ -1,4 +1,4 @@
-# BIT-Recruimtent-AI-assignment
+# BIT-Recruitment-AI-assignment
 
 ## Task
 
