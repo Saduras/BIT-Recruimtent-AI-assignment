@@ -9,10 +9,10 @@ def plot_time_data(x, y, label=''):
     plt.plot(x,y,label=label)
     plt.gcf().autofmt_xdate()
 
-def plot_test_datapoint(test_x, test_y, pred, forcast):
+def plot_test_datapoint(test_x, test_y, pred, forecast):
     plt.plot(test_x, label='input')
     off = len(test_x)
-    xs = list(range(off, off + forcast))
+    xs = list(range(off, off + forecast))
     plt.plot(xs, test_y, label='label')
     plt.plot(xs, pred, label='prediction')
 

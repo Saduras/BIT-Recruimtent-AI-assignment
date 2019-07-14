@@ -28,12 +28,12 @@ def main(args):
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
     processor = DataProcessor(window_size=args.window_size, 
-                            forcast_size=args.forcast,
+                            forecast_size=args.forecast,
                             shift=args.shift)
     train_X, train_y, test_X, test_y, raw_series = processor.preprocess(df)
 
     # train or load model
-    lstm = LSTMModel(args.window_size, args.forcast)
+    lstm = LSTMModel(args.window_size, args.forecast)
     print(lstm.model.summary())
     if not args.eval_only:
         lstm.fit(train_X, train_y, epochs=args.epochs)
@@ -44,11 +44,11 @@ def main(args):
     # evaluation and plots
     preds = lstm.predict(test_X[-1].reshape(1,-1, 1))
     preds = processor.postprocess(preds)
-    plot_test_datapoint(test_X[-1], test_y[-1], preds[0], args.forcast)
+    plot_test_datapoint(test_X[-1], test_y[-1], preds[0], args.forecast)
 
     preds_moving = moving_test_window_preds(lstm, test_X[0,:], 
                                             n_future_preds=1000,
-                                            step=args.forcast)
+                                            step=args.forecast)
     preds_moving = np.array(preds_moving).reshape(-1,1)
     preds_moving = processor.postprocess(preds_moving)
 
@@ -60,13 +60,13 @@ if __name__ == "__main__":
                         help='Path to csv dataset to use')
     parser.add_argument('-m','--model-path', type=str, default='./model.h5',
                         help='Path for saving/loading trained model')
-    parser.add_argument('-w','--window-size', type=int, default=50,
+    parser.add_argument('-w','--window-size', type=int, default=600,
                         help='Length of input sequence to predict next datapoint')
-    parser.add_argument('-f','--forcast', type=int, default=5,
+    parser.add_argument('-f','--forecast', type=int, default=200,
                         help='Length of predicted sequence')
     parser.add_argument('--shift', type=int, default=1,
                         help='By how many steps a training/test sequence is shifted to its previous')
-    parser.add_argument('--epochs', type=int, default=10,
+    parser.add_argument('--epochs', type=int, default=20,
                         help='Number of epochs for training')
     parser.add_argument('--eval-only', action='store_true',
                         help='If set model will be loaded from path instead of trained')

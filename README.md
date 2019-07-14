@@ -6,6 +6,8 @@ The goal of the project is to predict the next 6 month of a time series. The res
 
 ![result plot](plot_moving.png)
 
+The results where obtained with window size `600`, forecast `200` and `20` epochs of training on the `timeseries_5h.csv` data set.
+
 ## Dependencies
 
 The project is using Python 3.7 and Anaconda. To install the Anaconda environment use

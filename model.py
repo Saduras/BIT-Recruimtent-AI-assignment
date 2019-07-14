@@ -5,7 +5,7 @@ from keras.layers import LSTM, Dropout, Dense, Activation
 from keras.models import load_model, save_model
 
 class LSTMModel():
-    def __init__(self, window_size, forcast_size):
+    def __init__(self, window_size, forecast_size):
         self.model = Sequential()
         self.model.add(LSTM(input_shape=(window_size,1), 
                             output_dim=window_size, 
@@ -13,7 +13,7 @@ class LSTMModel():
         self.model.add(Dropout(0.5))
         self.model.add(LSTM(256))
         self.model.add(Dropout(0.5))
-        self.model.add(Dense(forcast_size))
+        self.model.add(Dense(forecast_size))
         self.model.add(Activation("linear"))
         
         self.model.compile(loss='mse', optimizer='adam')
