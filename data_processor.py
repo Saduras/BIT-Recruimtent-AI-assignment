@@ -3,8 +3,9 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 class DataProcessor:
-    def __init__(self, window_size, split_ratio=0.8):
+    def __init__(self, window_size, forcast_size=1, split_ratio=0.8):
         self.window_size = window_size
+        self.forcast_size = forcast_size
         self.split_ratio = split_ratio
         self.scaler = MinMaxScaler(feature_range=(-1,1))
 
@@ -17,7 +18,7 @@ class DataProcessor:
 
         # create windows
         series_s = series.copy()
-        for i in range(self.window_size):
+        for i in range(self.window_size + self.forcast_size - 1):
             series = pd.concat([series, series_s.shift(-(i+1))], axis=1)
         series.dropna(axis=0, inplace=True)
 
@@ -27,10 +28,10 @@ class DataProcessor:
         train = series.iloc[:nsplit, :]
         test = series.iloc[nsplit:, :]
 
-        train_X = train.iloc[:,:-1].values
-        train_y = train.iloc[:,-1].values
-        test_X = test.iloc[:,:-1].values
-        test_y = test.iloc[:,-1].values
+        train_X = train.iloc[:,:-self.forcast_size].values
+        train_y = train.iloc[:,-self.forcast_size:].values
+        test_X = test.iloc[:,:-self.forcast_size].values
+        test_y = test.iloc[:,-self.forcast_size:].values
 
         train_X = train_X.reshape(train_X.shape[0],train_X.shape[1],1)
         test_X = test_X.reshape(test_X.shape[0],test_X.shape[1],1)

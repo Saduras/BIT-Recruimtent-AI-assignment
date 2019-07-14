@@ -36,6 +36,8 @@ def main():
                         help='Path for saving/loading trained model')
     parser.add_argument('-w','--window-size', type=int, default=50,
                         help='Length of input sequence to predict next datapoint')
+    parser.add_argument('-f','--forcast', type=int, default=5,
+                        help='Length of predicted sequence')
     parser.add_argument('--eval-only', action='store_true',
                         help='If set model will be loaded from path instead of trained')
 
@@ -45,10 +47,10 @@ def main():
 
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
-    processor = DataProcessor(args.window_size)
+    processor = DataProcessor(window_size=args.window_size, forcast_size=args.forcast)
     train_X, train_y, test_X, test_y = processor.preprocess(df)
 
-    lstm = LSTMModel(args.window_size)
+    lstm = LSTMModel(args.window_size, args.forcast)
     print(lstm.model.summary())
     if not args.eval_only:
         lstm.fit(train_X, train_y)
