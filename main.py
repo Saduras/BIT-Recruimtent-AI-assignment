@@ -38,22 +38,28 @@ def main():
                         help='Length of input sequence to predict next datapoint')
     parser.add_argument('-f','--forcast', type=int, default=5,
                         help='Length of predicted sequence')
+    parser.add_argument('--epochs', type=int, default=10,
+                        help='Number of epochs for training')
     parser.add_argument('--eval-only', action='store_true',
                         help='If set model will be loaded from path instead of trained')
-
     args = parser.parse_args()
 
+    shift = 5
+
     df = pd.read_csv(args.dataset)
+    df = df.iloc[::24*2,:]
 
     # Preprocess input and reshapes to 
     # (num_samples, window_size, 1)
-    processor = DataProcessor(window_size=args.window_size, forcast_size=args.forcast)
+    processor = DataProcessor(window_size=args.window_size, 
+                            forcast_size=args.forcast,
+                            shift=shift)
     train_X, train_y, test_X, test_y = processor.preprocess(df)
 
     lstm = LSTMModel(args.window_size, args.forcast)
     print(lstm.model.summary())
     if not args.eval_only:
-        lstm.fit(train_X, train_y)
+        lstm.fit(train_X, train_y, epochs=args.epochs)
         lstm.save(args.model_path)
     else:
         lstm.load(args.model_path)
@@ -61,22 +67,36 @@ def main():
     preds = lstm.predict(test_X)
 
     preds = processor.postprocess(preds)
-    actuals = processor.postprocess(test_y)
+    actuals_train = processor.postprocess(train_y[:,1].reshape(-1,1))
+    actuals_test = processor.postprocess(test_y[:,1].reshape(-1,1))
+    print(actuals_train.shape, actuals_test.shape)
+    actuals = np.concatenate((actuals_train, actuals_test))
 
     fig1 = plt.figure()
     plt.plot(actuals, label='truth')
-    plt.plot(preds, label='prediction')
+    xs = []
+    for i in range(5):
+        off_s = len(train_X) + i * shift
+        # off_s = i * shift
+        off_e = off_s + args.forcast
+        xs.append([x for x in range(off_s, off_e)])
+    # print(xs, preds[0])
+    plt.plot(xs[0], preds[0], label='prediction')
+    plt.plot(xs[4], preds[4], label='prediction')
+
+    # print(preds.shape, xs.shape)
+
     plt.legend()
     plt.savefig('./plot_static.png')
 
-    preds_moving = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
-    preds_moving = processor.postprocess(preds_moving)
+    # preds_moving = moving_test_window_preds(lstm, test_X[0,:], n_future_preds=500)
+    # preds_moving = processor.postprocess(preds_moving)
 
-    fig2 = plt.figure()
-    plt.plot(actuals, label='truth')
-    plt.plot(preds_moving, label='prediction')
-    plt.legend()
-    plt.savefig('./plot_moving.png')
+    # fig2 = plt.figure()
+    # plt.plot(actuals, label='truth')
+    # plt.plot(preds_moving, label='prediction')
+    # plt.legend()
+    # plt.savefig('./plot_moving.png')
 
 if __name__ == "__main__":
     main()
